@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quy Nhơn Trip</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-100 to-blue-300 min-h-screen flex items-center justify-center">
+
+  <div class="bg-white rounded-2xl shadow-xl p-6 w-[90%] max-w-xl text-center">
+    <h1 class="text-2xl font-bold mb-4">📍 Quy Nhơn Trip</h1>
+
+    <div id="content" class="text-left space-y-2 text-gray-700"></div>
+
+    <div class="flex justify-between mt-6">
+      <button onclick="prevDay()" class="px-4 py-2 bg-gray-300 rounded-xl">⬅️ Prev</button>
+      <button onclick="nextDay()" class="px-4 py-2 bg-blue-500 text-white rounded-xl">Next ➡️</button>
+    </div>
+  </div>
+
+<script>
+const days = [
+  {
+    title: "Ngày 25 (Tối)",
+    items: [
+      "20:00 - Tới nơi, nhận phòng",
+      "21:00 - Dạo biển + ăn nhẹ",
+      "Nghỉ sớm"
+    ]
+  },
+  {
+    title: "Ngày 26 (Kỳ Co - Eo Gió)",
+    items: [
+      "07:30 - Đi Kỳ Co",
+      "09:00 - 12:00 Tắm biển + lặn",
+      "12:00 - Ăn trưa hải sản",
+      "14:00 - Đi Eo Gió",
+      "19:30 - Ăn tối hải sản"
+    ]
+  },
+  {
+    title: "Ngày 27 (City Tour)",
+    items: [
+      "08:00 - Tháp Đôi + Ghềnh Ráng",
+      "12:00 - Ăn trưa đặc sản",
+      "15:00 - Cafe Surf Bar",
+      "19:00 - Ăn tối + dạo biển"
+    ]
+  },
+  {
+    title: "Ngày 28",
+    items: [
+      "07:00 - Tắm biển + cafe",
+      "12:00 - Ăn trưa",
+      "14:00 - Về"
+    ]
+  }
+];
+
+let current = 0;
+
+function render() {
+  const day = days[current];
+  const content = document.getElementById("content");
+  content.innerHTML = `<h2 class="text-xl font-semibold mb-2">${day.title}</h2>` +
+    day.items.map(i => `<p>• ${i}</p>`).join("");
+}
+
+function nextDay() {
+  if (current < days.length - 1) {
+    current++;
+    render();
+  }
+}
+
+function prevDay() {
+  if (current > 0) {
+    current--;
+    render();
+  }
+}
+
+render();
+</script>
+
+</body>
+</html>
