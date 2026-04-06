@@ -33,6 +33,13 @@
         >
           Địa điểm
         </button>
+        <button
+          id="btn-money"
+          onclick="showTab('money')"
+          class="px-4 py-2 bg-gray-300 rounded-xl"
+        >
+          💸 Chi phí
+        </button>
       </div>
 
       <!-- Content -->
@@ -55,9 +62,57 @@
       </div>
     </div>
 
-    <script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        onValue,
+        set,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+      const firebaseConfig = {
+        apiKey: "AIzaSyDVIJoFMl3iZUMGNKMPyu1HF977f8qkQMM",
+        authDomain: "quynhon-trip.firebaseapp.com",
+        databaseURL:
+          "https://quynhon-trip-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "quynhon-trip",
+        storageBucket: "quynhon-trip.firebasestorage.app",
+        messagingSenderId: "778325151594",
+        appId: "1:778325151594:web:4a9d4d776ef0bae67adf13",
+        measurementId: "G-6T1QNTNESD",
+      };
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+
+      // 🔥 GLOBAL
+      let expenses = [];
+      window.expenses = expenses;
+
+      // 🔥 realtime load
+      onValue(ref(db, "expenses"), (snapshot) => {
+        expenses = snapshot.val() || [];
+        window.expenses = expenses;
+        render();
+      });
+
+      // 🔥 add expense (GLOBAL để HTML gọi được)
+      window.addExpense = function () {
+        const person = document.getElementById("person").value;
+        const desc = document.getElementById("desc").value;
+        let amount = document.getElementById("amount").value;
+
+        if (!person || !amount) return;
+
+        amount = Number(amount.replace(/\D/g, ""));
+
+        expenses.push({ person, desc, amount });
+
+        set(ref(db, "expenses"), expenses);
+      };
+
       let mode = "plan";
       let current = 0;
+
       const days = [
         {
           title: "Ngày 25 (Xuất phát)",
@@ -185,7 +240,6 @@
         } else {
           nextBtn.style.visibility = "visible";
         }
-
         if (mode === "plan") {
           nav.style.display = "flex";
           const day = days[current];
@@ -193,7 +247,7 @@
       <h2 class="text-xl font-semibold mb-2">${day.title}</h2>
       ${day.items.map((i) => `<p>• ${i}</p>`).join("")}
     `;
-        } else {
+        } else if (mode === "places") {
           nav.style.display = "none";
           content.innerHTML = `
       <h2 class="text-xl font-semibold mb-2">📍 Danh sách địa điểm check-in</h2>
@@ -201,38 +255,164 @@
       <h2 class="text-xl font-semibold mb-2">📍 Danh sách địa điểm ăn uống</h2>
       ${diningPlaces.map((p) => `<p>• <a href="${p.map}" target="_blank" class="text-blue-600 underline">${p.name}</a></p>`).join("")}
     `;
+        } else {
+          nav.style.display = "none";
+
+          // 🔥 đảm bảo expenses luôn là array
+          const list = expenses || [];
+
+          const total = list.reduce((s, e) => s + Number(e.amount || 0), 0);
+
+          const TOTAL_PEOPLE = 5;
+          const per = Math.round(total / TOTAL_PEOPLE);
+
+          content.innerHTML = `
+    <h2 class="text-xl font-semibold mb-2">💸 Chi phí</h2>
+
+    <div class="flex gap-2 mb-2">
+      <input id="person" placeholder="Người trả"
+        class="border p-2 w-1/3 rounded" />
+        <input id="desc" placeholder="Nội dung"
+      class="border p-2 w-1/2 rounded" />
+
+      <input id="amount"
+    type="text"
+    placeholder="Số tiền"
+    oninput="formatInput(this)"
+    class="border p-2 w-1/2 rounded" />
+    </div>
+
+    <button onclick="addExpense()"
+      class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full">
+      Thêm
+    </button>
+
+    <div class="mt-4 space-y-1">
+      ${
+        list.length === 0
+          ? `<p class="text-gray-400">Chưa có chi phí</p>`
+          : list
+              .map(
+                (e, i) => `
+          <p class="flex justify-between items-center">
+            <span>• <b>${e.person} - ${e.desc || ""}:</b> ${Number(e.amount).toLocaleString()}đ</span>
+
+            <span class="flex gap-2">
+              <button onclick="deleteExpense(${i})" class="text-red-500">Xoá</button>
+            </span>
+          </p>
+        `,
+              )
+              .join("")
+      }
+    </div>
+
+    <hr class="my-3"/>
+
+    <p><b>Tổng:</b> ${total.toLocaleString()}đ</p>
+    <p><b>Mỗi người:</b> ${per.toLocaleString()}đ</p>
+  `;
         }
       }
 
-      function nextDay() {
+      window.nextDay = function () {
         if (current < days.length - 1) {
           current++;
           render();
         }
-      }
+      };
 
-      function prevDay() {
+      window.prevDay = function () {
         if (current > 0) {
           current--;
           render();
         }
-      }
+      };
 
-      function showTab(tab) {
+      window.showTab = function (tab) {
         mode = tab;
         render();
-      }
+      };
       function updateTabStyle() {
         const planBtn = document.getElementById("btn-plan");
         const placesBtn = document.getElementById("btn-places");
+        const moneyBtn = document.getElementById("btn-money");
         if (mode === "plan") {
           planBtn.className = "px-4 py-2 bg-blue-500 text-white rounded-xl";
           placesBtn.className = "px-4 py-2 bg-gray-300 rounded-xl";
-        } else {
+          moneyBtn.className = "px-4 py-2 bg-gray-300 rounded-xl";
+        } else if (mode === "places") {
           planBtn.className = "px-4 py-2 bg-gray-300 rounded-xl";
           placesBtn.className = "px-4 py-2 bg-blue-500 text-white rounded-xl";
+          moneyBtn.className = "px-4 py-2 bg-gray-300 rounded-xl";
+        } else {
+          planBtn.className = "px-4 py-2 bg-gray-300 rounded-xl";
+          placesBtn.className = "px-4 py-2 bg-gray-300 rounded-xl";
+          moneyBtn.className = "px-4 py-2 bg-blue-500 text-white rounded-xl";
         }
       }
+      window.formatInput = function (el) {
+        let value = el.value;
+
+        // 🔥 Lưu vị trí con trỏ
+        let cursorPos = el.selectionStart;
+
+        // Đếm số ký tự số trước cursor
+        let rawBeforeCursor = value
+          .slice(0, cursorPos)
+          .replace(/\D/g, "").length;
+
+        // Lấy số sạch
+        let raw = value.replace(/\D/g, "");
+
+        if (!raw) {
+          el.value = "";
+          return;
+        }
+
+        // Format lại
+        let formatted = Number(raw).toLocaleString("en-US") + " đ";
+        el.value = formatted;
+
+        // 🔥 Tính lại vị trí cursor mới
+        let count = 0;
+        let newPos = 0;
+
+        for (let i = 0; i < el.value.length; i++) {
+          if (/\d/.test(el.value[i])) count++;
+          if (count === rawBeforeCursor) {
+            newPos = i + 1;
+            break;
+          }
+        }
+
+        // fallback nếu ở cuối
+        if (!newPos) newPos = el.value.length - 2;
+
+        el.setSelectionRange(newPos, newPos);
+      };
+      function formatVND(value) {
+        const number = value.replace(/\D/g, "");
+        if (!number) return "";
+        return Number(number).toLocaleString("en-US") + " đ";
+      }
+      setTimeout(() => {
+        const input = document.getElementById("amount");
+        if (!input) return;
+
+        input.addEventListener("input", (e) => {
+          const raw = e.target.value.replace(/\D/g, "");
+          e.target.value = formatVND(raw);
+        });
+      }, 0);
+
+      window.deleteExpense = function (index) {
+        if (!confirm("Xoá khoản này?")) return;
+
+        expenses.splice(index, 1);
+        set(ref(db, "expenses"), expenses);
+      };
+
       render();
     </script>
   </body>
