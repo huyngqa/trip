@@ -40,6 +40,12 @@
         >
           💸 Chi phí
         </button>
+        <button
+          onclick="window.location.href = 'upload.html'"
+          class="bg-green-500 text-white px-4 py-2 rounded"
+        >
+          📷 Upload ảnh
+        </button>
       </div>
 
       <!-- Content -->
@@ -70,6 +76,7 @@
         onValue,
         set,
       } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
       const firebaseConfig = {
         apiKey: "AIzaSyDVIJoFMl3iZUMGNKMPyu1HF977f8qkQMM",
         authDomain: "quynhon-trip.firebaseapp.com",
@@ -141,8 +148,8 @@
         {
           title: "Ngày 27 (City Tour)",
           items: [
-            "08:00 - Tháp Đôi + Ghềnh Ráng + Hàn Mạc Tử",
-            "12:00 - Ăn trưa đặc sản",
+            "08:00 - Hòn Khô",
+            "12:00 - Ăn trưa",
             "14:00 - ExploraScience",
             "16:00 - Cafe Surf Bar",
             "18:00 - Về khách sạn nghỉ ngơi",

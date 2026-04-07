@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Ảnh Quy Nhơn Trip</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="flex flex-col items-center justify-center min-h-screen bg-blue-50 p-4"
+  >
+    <h1 class="text-2xl font-bold mb-4 text-center text-blue-800">
+      📷 Upload ảnh Quy Nhơn Trip
+    </h1>
+
+    <a
+      href="index.html"
+      class="block mb-4 text-blue-600 hover:text-blue-800 underline text-center"
+    >
+      ⬅️ Quay về Trang chính
+    </a>
+
+    <div class="flex flex-col items-center mb-4 gap-2">
+      <input
+        type="file"
+        id="imgInput"
+        accept="image/*"
+        multiple
+        class="border border-gray-300 p-2 rounded w-full file:bg-blue-500 file:text-white file:rounded file:px-3 file:py-1 file:border-none file:cursor-pointer"
+      />
+
+      <button
+        id="uploadBtn"
+        class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded transition-all duration-200"
+      >
+        Upload
+      </button>
+    </div>
+
+    <div id="imgPreview" class="grid grid-cols-4 gap-2 mb-4"></div>
+
+    <h2 class="text-xl font-semibold mb-2 text-gray-700">Ảnh đã upload</h2>
+    <div id="uploadedImgs" class="grid grid-cols-4 gap-2"></div>
+
+    <!-- Lightbox -->
+    <div
+      id="lightbox"
+      class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50"
+    >
+      <button
+        id="prevBtn"
+        class="absolute left-4 text-white text-3xl font-bold hover:text-gray-300"
+      >
+        ◀
+      </button>
+      <img id="lightboxImg" class="max-h-[80%] max-w-[80%] rounded shadow-lg" />
+      <button
+        id="nextBtn"
+        class="absolute right-4 text-white text-3xl font-bold hover:text-gray-300"
+      >
+        ▶
+      </button>
+      <button
+        id="lightboxClose"
+        class="absolute top-4 right-4 text-white text-2xl font-bold hover:text-gray-300"
+      >
+        ✖
+      </button>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        onValue,
+        set,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDVIJoFMl3iZUMGNKMPyu1HF977f8qkQMM",
+        authDomain: "quynhon-trip.firebaseapp.com",
+        databaseURL:
+          "https://quynhon-trip-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "quynhon-trip",
+        storageBucket: "quynhon-trip.firebasestorage.app",
+        messagingSenderId: "778325151594",
+        appId: "1:778325151594:web:4a9d4d776ef0bae67adf13",
+        measurementId: "G-6T1QNTNESD",
+      };
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      const imgbbApiKey = "e42442d1304b58c49edaa1684f6ded30";
+
+      // Upload nhiều ảnh
+      let images = [];
+      onValue(ref(db, "images"), (snapshot) => {
+        images = snapshot.val() || [];
+        renderGallery();
+      });
+
+      // Upload nhiều ảnh
+      document
+        .getElementById("uploadBtn")
+        .addEventListener("click", async () => {
+          const files = document.getElementById("imgInput").files;
+          if (!files.length) return alert("Chọn ít nhất 1 ảnh!");
+
+          for (const file of files) {
+            const formData = new FormData();
+            formData.append("image", await fileToBase64(file));
+
+            try {
+              const res = await fetch(
+                `https://api.imgbb.com/1/upload?key=${imgbbApiKey}`,
+                {
+                  method: "POST",
+                  body: formData,
+                },
+              );
+              const data = await res.json();
+              if (data.success) {
+                const url = data.data.url;
+                images.push(url);
+                await set(ref(db, "images"), images);
+              } else {
+                console.error(data);
+                alert("Upload thất bại!");
+              }
+            } catch (err) {
+              console.error(err);
+              alert("Upload thất bại!");
+            }
+          }
+          alert("Upload ảnh thành công!");
+        });
+
+      // Chuyển file sang base64
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // Render gallery
+      let currentIndex = 0; // Lưu vị trí ảnh đang xem
+
+      function renderGallery() {
+        const container = document.getElementById("uploadedImgs");
+        container.innerHTML = "";
+
+        images.forEach((url, index) => {
+          const wrapper = document.createElement("div");
+          wrapper.className = "relative";
+
+          // Ảnh nhỏ
+          const img = document.createElement("img");
+          img.src = url;
+          img.className =
+            "h-24 w-24 object-cover rounded border shadow cursor-pointer";
+
+          // Click mở lightbox
+          img.addEventListener("click", () => openLightbox(index));
+
+          // Nút xoá góc trên bên phải
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "✖";
+          delBtn.className =
+            "absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hover:bg-red-700";
+          delBtn.addEventListener("click", (e) => {
+            e.stopPropagation(); // Ngăn click ảnh mở lightbox
+            deleteImage(index);
+          });
+
+          wrapper.appendChild(img);
+          wrapper.appendChild(delBtn);
+          container.appendChild(wrapper);
+        });
+      }
+
+      // Mở lightbox dựa trên index
+      function openLightbox(index) {
+        currentIndex = index;
+        updateLightbox();
+        const lightbox = document.getElementById("lightbox");
+        lightbox.classList.remove("hidden");
+        lightbox.classList.add("flex");
+      }
+
+      // Cập nhật ảnh và nút next/prev
+      function updateLightbox() {
+        const lightboxImg = document.getElementById("lightboxImg");
+        lightboxImg.src = images[currentIndex];
+
+        // Nút prev/next
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+
+        prevBtn.style.display = currentIndex > 0 ? "block" : "none";
+        nextBtn.style.display =
+          currentIndex < images.length - 1 ? "block" : "none";
+      }
+
+      // Nút prev
+      document.getElementById("prevBtn").addEventListener("click", () => {
+        if (currentIndex > 0) {
+          currentIndex--;
+          updateLightbox();
+        }
+      });
+
+      // Nút next
+      document.getElementById("nextBtn").addEventListener("click", () => {
+        if (currentIndex < images.length - 1) {
+          currentIndex++;
+          updateLightbox();
+        }
+      });
+      document.addEventListener("keydown", (e) => {
+        const lightbox = document.getElementById("lightbox");
+        if (lightbox.classList.contains("flex")) {
+          // Chỉ khi lightbox mở
+          if (e.key === "ArrowLeft" && currentIndex > 0) {
+            currentIndex--;
+            updateLightbox();
+          } else if (
+            e.key === "ArrowRight" &&
+            currentIndex < images.length - 1
+          ) {
+            currentIndex++;
+            updateLightbox();
+          } else if (e.key === "Escape") {
+            // Nhấn Esc để đóng
+            lightbox.classList.remove("flex");
+            lightbox.classList.add("hidden");
+          }
+        }
+      });
+      // Đóng lightbox
+      document.getElementById("lightboxClose").addEventListener("click", () => {
+        const lightbox = document.getElementById("lightbox");
+        lightbox.classList.remove("flex");
+        lightbox.classList.add("hidden");
+      });
+
+      // Xóa ảnh
+      async function deleteImage(index) {
+        if (!confirm("Bạn có chắc muốn xoá ảnh này?")) return;
+        images.splice(index, 1);
+        await set(ref(db, "images"), images);
+        renderGallery();
+        alert("Xoá ảnh thành công ✅");
+      }
+    </script>
+  </body>
+</html>
