@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Đi chùa online 🙏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <style>
+    @keyframes marquee {
+      0% {
+        transform: translateX(100%);
+      }
+      100% {
+        transform: translateX(-100%);
+      }
+    }
+
+    .animate-marquee {
+      display: inline-block;
+      white-space: nowrap;
+      animation: marquee 12s linear infinite;
+    }
+  </style>
+  <body
+    class="min-h-screen flex items-center justify-center min-h-screen flex items-center justify-center bg-no-repeat bg-cover bg-center"
+    style="background-image: url(assert/chua1.png)"
+  >
+    <div
+      class="w-full max-w-md mx-4 text-center rounded-2xl overflow-hidden shadow-2xl bg-white/80 backdrop-blur-md"
+    >
+      <img src="assert/bathuong.jpg" class="w-full h-40 object-cover" />
+
+      <div class="p-6">
+        <h1
+          class="text-3xl font-bold mb-2 flex items-center justify-center gap-2"
+        >
+          <img src="assert/temple.png" class="w-8 h-8" />
+          Đi chùa online
+        </h1>
+        <p id="message" class="mb-5 text-gray-600 italic text-lg">
+          🙏 Tâm an vạn sự an
+        </p>
+
+        <div id="stats" class="mb-4 text-gray-700 text-sm"></div>
+
+        <div class="flex flex-col gap-3">
+          <button
+            onclick="bow()"
+            class="bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl text-lg shadow"
+          >
+            🙏 Lạy Phật
+          </button>
+
+          <button
+            onclick="lightIncense()"
+            class="bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl text-lg shadow"
+          >
+            🕯️ Thắp hương
+          </button>
+        </div>
+
+        <div class="mt-5">
+          <input
+            id="donorName"
+            placeholder="Tên người cúng dường"
+            class="border p-3 w-full rounded mb-2 text-center text-lg"
+          />
+          <input
+            id="donate"
+            placeholder="Nhập tiền công đức"
+            oninput="formatInput(this)"
+            class="border p-3 w-full rounded mb-3 text-center text-lg"
+          />
+
+          <button
+            onclick="donate()"
+            class="bg-green-500 hover:bg-green-600 text-white py-3 w-full rounded-xl text-lg shadow"
+          >
+            💰 Công đức
+          </button>
+        </div>
+
+        <div id="effect" class="mt-4 text-3xl"></div>
+
+        <a href="index.html" class="block mt-5 text-blue-500 underline">
+          ← Quay lại
+        </a>
+      </div>
+    </div>
+    <div
+      class="fixed bottom-0 w-full py-2 overflow-hidden bg-gradient-to-t from-black/40 to-transparent"
+    >
+      <div
+        id="donorMarquee"
+        class="whitespace-nowrap animate-marquee text-white font-medium"
+      ></div>
+    </div>
+    <audio id="clickSound" src="assert/bell.mp3"></audio>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        onValue,
+        set,
+        push,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDVIJoFMl3iZUMGNKMPyu1HF977f8qkQMM",
+        authDomain: "quynhon-trip.firebaseapp.com",
+        databaseURL:
+          "https://quynhon-trip-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "quynhon-trip",
+        storageBucket: "quynhon-trip.firebasestorage.app",
+        messagingSenderId: "778325151594",
+        appId: "1:778325151594:web:4a9d4d776ef0bae67adf13",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+
+      const messages = [
+        "🙏 Công đức vô lượng",
+        "🌿 Bình an đến với bạn",
+        "✨ Mọi điều thuận lợi",
+        "💖 Gia đình mạnh khỏe",
+        "🍀 May mắn cả chuyến đi",
+      ];
+
+      // 🔥 state
+      let data = { bow: 0, incense: 0 };
+      let donors = [];
+      let totalMoney = 0;
+
+      onValue(ref(db, "temple"), (snap) => {
+        data = snap.val() || { bow: 0, incense: 0 };
+        renderStats();
+      });
+
+      onValue(ref(db, "donations"), (snap) => {
+        let val = snap.val();
+
+        donors = [];
+        totalMoney = 0;
+
+        if (val) {
+          Object.values(val).forEach((item) => {
+            totalMoney += item.amount;
+            donors.push(
+              `${item.name} cúng dường ${item.amount.toLocaleString()} đ 🙏`,
+            );
+          });
+        }
+
+        updateMarquee();
+        renderStats();
+      });
+
+      function renderStats() {
+        document.getElementById("stats").innerHTML = `
+    🙏 Lạy phật: ${data.bow} lần<br>
+    🕯️ Thắp hương: ${data.incense} lần<br>
+    💰 Công đức: ${totalMoney.toLocaleString()} đ
+  `;
+      }
+
+      function randomMsg() {
+        return messages[Math.floor(Math.random() * messages.length)];
+      }
+
+      function showMsg() {
+        document.getElementById("message").innerText = randomMsg();
+      }
+
+      function showEffect(text) {
+        document.getElementById("effect").innerText = text;
+      }
+
+      window.bow = function () {
+        data.bow++;
+        set(ref(db, "temple"), data);
+        feedback();
+        showMsg();
+        showEffect("🙏🙏🙏");
+      };
+
+      window.lightIncense = function () {
+        data.incense++;
+        set(ref(db, "temple"), data);
+        feedback();
+        showMsg();
+        showEffect("🕯️🕯️🕯️");
+      };
+
+      window.donate = function () {
+        let name = document.getElementById("donorName").value.trim();
+        let input = document.getElementById("donate");
+        let value = input.value.replace(/[^\d]/g, "");
+
+        if (!name) {
+          alert("Vui lòng nhập tên 🙏");
+          return;
+        }
+
+        if (!value) {
+          alert("Vui lòng nhập số tiền 💰");
+          return;
+        }
+
+        let amount = parseInt(value);
+
+        push(ref(db, "donations"), {
+          name: name,
+          amount: amount,
+          time: new Date().toLocaleString(),
+        });
+
+        alert(`🙏 Cảm ơn ${name} đã cúng dường ${amount.toLocaleString()} đ`);
+
+        feedback();
+        showMsg();
+        showEffect("💰💰💰");
+
+        input.value = "";
+        document.getElementById("donorName").value = "";
+      };
+
+      function updateMarquee() {
+        let marquee = document.getElementById("donorMarquee");
+
+        if (!marquee) return;
+
+        if (donors.length === 0) {
+          marquee.innerText = "🙏 Chưa có ai cúng dường";
+          return;
+        }
+
+        marquee.innerText = donors.join("   ✦   ");
+      }
+
+      window.formatInput = function (el) {
+        let value = el.value;
+        let cursorPos = el.selectionStart;
+        let rawBeforeCursor = value
+          .slice(0, cursorPos)
+          .replace(/\D/g, "").length;
+
+        let raw = value.replace(/\D/g, "");
+
+        if (!raw) {
+          el.value = "";
+          return;
+        }
+
+        let formatted = Number(raw).toLocaleString("en-US") + " đ";
+        el.value = formatted;
+
+        let count = 0;
+        let newPos = 0;
+
+        for (let i = 0; i < el.value.length; i++) {
+          if (/\d/.test(el.value[i])) count++;
+          if (count === rawBeforeCursor) {
+            newPos = i + 1;
+            break;
+          }
+        }
+
+        if (!newPos) newPos = el.value.length - 2;
+        el.setSelectionRange(newPos, newPos);
+      };
+      function feedback() {
+        const sound = document.getElementById("clickSound");
+        if (sound) {
+          sound.currentTime = 0;
+          sound.play();
+        }
+
+        if (navigator.vibrate) {
+          navigator.vibrate(100);
+        }
+      }
+    </script>
+  </body>
+</html>

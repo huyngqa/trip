@@ -46,6 +46,12 @@
         >
           📷 Upload ảnh
         </button>
+        <a
+          href="temple.html"
+          class="px-4 py-2 bg-yellow-400 rounded-xl text-white"
+        >
+          🛕 Đi chùa
+        </a>
       </div>
 
       <!-- Content -->
@@ -361,15 +367,12 @@
       window.formatInput = function (el) {
         let value = el.value;
 
-        // 🔥 Lưu vị trí con trỏ
         let cursorPos = el.selectionStart;
 
-        // Đếm số ký tự số trước cursor
         let rawBeforeCursor = value
           .slice(0, cursorPos)
           .replace(/\D/g, "").length;
 
-        // Lấy số sạch
         let raw = value.replace(/\D/g, "");
 
         if (!raw) {
@@ -377,11 +380,9 @@
           return;
         }
 
-        // Format lại
         let formatted = Number(raw).toLocaleString("en-US") + " đ";
         el.value = formatted;
 
-        // 🔥 Tính lại vị trí cursor mới
         let count = 0;
         let newPos = 0;
 
@@ -392,8 +393,6 @@
             break;
           }
         }
-
-        // fallback nếu ở cuối
         if (!newPos) newPos = el.value.length - 2;
 
         el.setSelectionRange(newPos, newPos);
