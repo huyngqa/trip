@@ -92,14 +92,12 @@
       const db = getDatabase(app);
       const imgbbApiKey = "e42442d1304b58c49edaa1684f6ded30";
 
-      // Upload nhiều ảnh
       let images = [];
       onValue(ref(db, "images"), (snapshot) => {
         images = snapshot.val() || [];
         renderGallery();
       });
 
-      // Upload nhiều ảnh
       document
         .getElementById("uploadBtn")
         .addEventListener("click", async () => {
@@ -135,7 +133,6 @@
           alert("Upload ảnh thành công!");
         });
 
-      // Chuyển file sang base64
       function fileToBase64(file) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -145,8 +142,7 @@
         });
       }
 
-      // Render gallery
-      let currentIndex = 0; // Lưu vị trí ảnh đang xem
+      let currentIndex = 0; 
 
       function renderGallery() {
         const container = document.getElementById("uploadedImgs");
@@ -156,22 +152,19 @@
           const wrapper = document.createElement("div");
           wrapper.className = "relative";
 
-          // Ảnh nhỏ
           const img = document.createElement("img");
           img.src = url;
           img.className =
             "h-24 w-24 object-cover rounded border shadow cursor-pointer";
 
-          // Click mở lightbox
           img.addEventListener("click", () => openLightbox(index));
 
-          // Nút xoá góc trên bên phải
           const delBtn = document.createElement("button");
           delBtn.textContent = "✖";
           delBtn.className =
             "absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hover:bg-red-700";
           delBtn.addEventListener("click", (e) => {
-            e.stopPropagation(); // Ngăn click ảnh mở lightbox
+            e.stopPropagation(); 
             deleteImage(index);
           });
 
@@ -181,7 +174,6 @@
         });
       }
 
-      // Mở lightbox dựa trên index
       function openLightbox(index) {
         currentIndex = index;
         updateLightbox();
@@ -190,7 +182,6 @@
         lightbox.classList.add("flex");
       }
 
-      // Cập nhật ảnh và nút next/prev
       function updateLightbox() {
         const lightboxImg = document.getElementById("lightboxImg");
         lightboxImg.src = images[currentIndex];
@@ -204,7 +195,6 @@
           currentIndex < images.length - 1 ? "block" : "none";
       }
 
-      // Nút prev
       document.getElementById("prevBtn").addEventListener("click", () => {
         if (currentIndex > 0) {
           currentIndex--;
@@ -212,7 +202,6 @@
         }
       });
 
-      // Nút next
       document.getElementById("nextBtn").addEventListener("click", () => {
         if (currentIndex < images.length - 1) {
           currentIndex++;
@@ -222,7 +211,6 @@
       document.addEventListener("keydown", (e) => {
         const lightbox = document.getElementById("lightbox");
         if (lightbox.classList.contains("flex")) {
-          // Chỉ khi lightbox mở
           if (e.key === "ArrowLeft" && currentIndex > 0) {
             currentIndex--;
             updateLightbox();

@@ -96,6 +96,7 @@
       ></div>
     </div>
     <audio id="clickSound" src="assert/bell.mp3"></audio>
+    <audio id="chantAudio" src="assert/niem_phat.mp3"></audio>
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import {
@@ -271,6 +272,10 @@
         el.setSelectionRange(newPos, newPos);
       };
       function feedback() {
+        const audio = document.getElementById("chantAudio");
+        if (audio && audio.paused) {
+          audio.play().catch(() => {});
+        }
         const sound = document.getElementById("clickSound");
         if (sound) {
           sound.currentTime = 0;
